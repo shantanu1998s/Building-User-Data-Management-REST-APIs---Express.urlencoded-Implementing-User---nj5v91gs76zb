@@ -24,8 +24,13 @@ The response should be in the following format:
     }
 }*/
 app.get("/api/v1/users/", (req, res) => {
-    try {
-        //Write your code here.
+   try {
+        res.status(200).json({
+            status: "success",
+            data: {
+                users,
+            },
+        });
     } catch (err) {
         res.status(404).json({
             message: "Users Not Found",
@@ -53,7 +58,20 @@ Return 404 error when user is not found.
 */
 app.get("/api/v1/users/:id", (req, res) => {
     try {
-        //Write your code here
+        const user = users.find((user) => user._id === Number(req.params.id));
+        if (!user) {
+            res.status(404).json({
+                message: "User Not Found",
+                status: "Error",
+            });
+            return;
+        }
+        res.status(200).json({
+            status: "success",
+            data: {
+                user,
+            },
+        });
     } catch (err) {
         res.status(400).json({
             message: "User Fetching Failed",
@@ -81,9 +99,30 @@ Generate a new id using the id of the last user in the database, increment it by
 Return a 400 error when the email or name is missing 
 */
 app.post("/api/v1/users/", (req, res) => {
-    try {
-        //Write your code here
-    } catch (err) {
+   try {
+        const { name, email } = req.body;
+        if (!name || !email) {
+            res.status(400).json({
+                message: "Name or Email is missing",
+                status: "Error",
+            });
+            return;
+        }
+        const id = users[users.length - 1]._id + 1;
+        const newUser = {
+            _id: id,
+            name,
+            email,
+        };
+        users.push(newUser);
+        fs.writeFileSync(`${__dirname}/../data/users.json`, JSON.stringify(users));
+        res.status(201).json({
+            status: "success",
+            data: {
+                user: newUser,
+            },
+        });
+       } catch (err) {
         res.status(400).json({
             message: "User Creation failed",
             status: "Error",
@@ -119,7 +158,37 @@ Return a 404 error if the user is missing, with the following message
 */
 app.patch("/api/v1/users/:id", (req, res) => {
     try {
-        //Write your code here.
+        const id = parseInt(req.params.id);
+        let users = JSON.parse(fs.readFileSync("users.json"));
+        let found = false;
+
+        users = users.map((user) => {
+            if (user._id === id) {
+                found = true;
+                return {
+                    ...user,
+                    ...req.body,
+                };
+            } else {
+                return user;
+            }
+        });
+
+        if (!found) {
+            res.status(404).json({
+                message: "User not Found",
+            });
+            return;
+        }
+
+        fs.writeFileSync("users.json", JSON.stringify(users));
+
+        res.status(200).json({
+            status: "success",
+            data: {
+                users,
+            },
+        });   
     } catch (err) {
         console.log(err);
         res.status(400).json({
@@ -158,7 +227,34 @@ Return a 404 error if the user is missing, with the following message
 */
 app.delete("/api/v1/users/:id", (req, res) => {
     try {
-        //Write your code here.
+        const id = parseInt(req.params.id);
+        let users = JSON.parse(fs.readFileSync("users.json"));
+        let found = false;
+
+        users = users.filter((user) => {
+            if (user._id === id) {
+                found = true;
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        if (!found) {
+            res.status(404).json({
+                message: "User not Found",
+            });
+            return;
+        }
+
+        fs.writeFileSync("users.json", JSON.stringify(users));
+
+        res.status(200).json({
+            status: "success",
+            data: {
+                users,
+            },
+        });
     } catch (err) {
         console.log(err);
         res.status(400).json({
